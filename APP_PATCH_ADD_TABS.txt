@@ -1,0 +1,46 @@
+# --- AJOUT : Onglets PRO ---
+tab1, tab2, tab3 = st.tabs(["Briefs PRO", "Cocons (Mots-clés)", "Recherche externe"])
+
+with tab1:
+    st.markdown("### Briefs PRO (cibles / 1000 mots + score de couverture)")
+    per_page_terms = st.slider("Nombre de termes par page", 20, 60, 40, 5)
+    target_len = st.slider("Longueur de référence (mots)", 800, 2000, 1200, 100)
+    if st.button("Générer les Briefs PRO"):
+        from modules.briefs_pro import generate_briefs_pro, export_briefs_pro_csv
+        briefs_pro = generate_briefs_pro(analysis, clusters, target_len_words=target_len, per_page_terms=per_page_terms)
+        st.dataframe(briefs_pro.head(80))
+        st.download_button("Télécharger briefs PRO (CSV)", briefs_pro.to_csv(index=False).encode("utf-8"), "briefs_pro.csv")
+        export_briefs_pro_csv(briefs_pro)
+        st.success("Briefs PRO exportés dans ./exports/briefs_pro.csv")
+
+with tab2:
+    st.markdown("### Générateur de cocons à partir d'une liste de mots-clés")
+    kws_text = st.text_area("Colle une liste de mots-clés (un par ligne)", height=200)
+    n_clusters = st.number_input("Nombre de clusters (laisser 0 pour auto)", min_value=0, max_value=50, value=0, step=1)
+    if st.button("Clusteriser les mots-clés"):
+        from modules.keywords import cluster_keywords, export_cocons_to_csv
+        kws = [k.strip() for k in kws_text.splitlines() if k.strip()]
+        if kws:
+            cocons_df = cluster_keywords(kws, n_clusters if n_clusters>0 else None, model_name=cfg["similarity"]["model_name"])
+            st.dataframe(cocons_df.head(100))
+            st.download_button("Télécharger cocons (CSV)", cocons_df.to_csv(index=False).encode("utf-8"), "cocons_keywords.csv")
+            export_cocons_to_csv(cocons_df)
+            st.success("Cocons exportés dans ./exports/cocons_keywords.csv")
+        else:
+            st.warning("Ajoute au moins un mot-clé.")
+
+with tab3:
+    st.markdown("### Recherche externe (SERP) — optionnelle")
+    st.info("Ajoute une clé BING_SEARCH_KEY dans .env pour activer.")
+    query = st.text_input("Requête (ex: peinture acrylique débutant)")
+    topn = st.slider("Nombre de résultats", 1, 10, 5)
+    if st.button("Rechercher") and query:
+        try:
+            from modules.serp_external import bing_search, fetch_pages
+            results = bing_search(query, topn=topn)
+            st.write(results)
+            urls = [r["url"] for r in results]
+            pages = fetch_pages(urls)
+            st.write(f"Pages récupérées: {len(pages)}")
+        except Exception as e:
+            st.error(str(e))

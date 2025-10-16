@@ -1,0 +1,11 @@
+# AJOUT DANS app.py (après la section "5) Briefs lexicaux")
+
+st.subheader("6) Briefs enrichis (TERMES + ENTITÉS + COOC + QUESTIONS + ANCRES)")
+per_terms = st.slider("Termes à générer par page", 40, 120, 80, 10)
+if st.button("Générer les briefs enrichis"):
+    from modules.enrich import enrich_page, export_enriched_csv
+    enriched = enrich_page(analysis, clusters, links_df, per_page_terms=per_terms)
+    st.dataframe(enriched.head(200))
+    st.download_button("Télécharger briefs enrichis (CSV)", enriched.to_csv(index=False).encode("utf-8"), "briefs_enriched.csv")
+    export_enriched_csv(enriched)
+    st.success("Briefs enrichis exportés dans ./exports/briefs_enriched.csv")

@@ -1,0 +1,9 @@
+
+# === AJOUTS RECOMMANDÉS DANS config.yaml ===
+briefs_pro:
+  per_page_terms: 40
+  target_len_words: 1200
+
+serp:
+  provider: "bing"  # ou "serpapi"
+  topn: 5
